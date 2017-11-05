@@ -15,9 +15,7 @@ def csv_to_pandas(csv_filepath, *args, **kwargs):
 
 currenpath = os.getcwd()
 
-df = csv_to_pandas(os.path.join(currenpath, "Richner.csv"))
-text = df['Art_Txt_Lang']
-
+df = csv_to_pandas(os.path.join(currenpath, "Sample-Text.csv.gz"), compression="gzip")
 
 def batch(iterable, n=1):
     from scipy import sparse
@@ -45,14 +43,23 @@ def get_sorted_distance_array(x, y=None,
 
     arr = np.empty((nrow, top_n))
 
-    print("Number of Baches {}".format(number_of_batches))
-
     for i, a in tqdm.tqdm(zip(batch(X, chunksize), batch(arr, chunksize))):
         distance = pairwise_distances(i, Y, *args, **kwargs)
+
+        np.fill_diagonal(distance, np.nan)
+
         sorted_distance = np.argsort(distance, axis=1)[:, :top_n]
         a[:, :] = sorted_distance
 
     return arr
 
 
-a = get_sorted_distance_array(df['Art_Txt_Lang'], metric="cosine")
+a = get_sorted_distance_array(df['Text'], chunksize=1000, metric="cosine", n_jobs=4)
+
+
+df2 = pd.concat([df, dfa], axis=1).iloc[:,2:]
+df2.columns = ["Text", "Join1","Join2","Join3"]
+
+for i in ["Join1","Join2","Join3"]:
+    d = df2.loc[df2[i].astype(int), "Text"].reset_index(drop=True)
+    df2['Text_{}'.format(i)] = d
