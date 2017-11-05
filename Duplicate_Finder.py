@@ -36,7 +36,7 @@ def get_sorted_distance_array(x, y=None,
         y = x
 
     vec = CountVectorizer()
-    
+
     X = vec.fit_transform(x)
     Y = vec.transform(y)
 
