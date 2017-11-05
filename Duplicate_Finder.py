@@ -16,6 +16,9 @@ def csv_to_pandas(csv_filepath, *args, **kwargs):
 currenpath = os.getcwd()
 
 df = csv_to_pandas(os.path.join(currenpath, "Sample-Text.csv.gz"), compression="gzip")
+df = df.sample(10000)
+df = pd.concat([df, df], axis=0).reset_index()
+
 
 def batch(iterable, n=1):
     from scipy import sparse
@@ -41,6 +44,8 @@ def get_sorted_distance_array(x, y=None,
     nrow = X.shape[0]
     number_of_batches = math.ceil(nrow / chunksize)
 
+    print("Number of Batches: {}".format(number_of_batches))
+
     arr = np.empty((nrow, top_n))
 
     for i, a in tqdm.tqdm(zip(batch(X, chunksize), batch(arr, chunksize))):
@@ -53,13 +58,24 @@ def get_sorted_distance_array(x, y=None,
 
     return arr
 
+a[1,1:]
 
-a = get_sorted_distance_array(df['Text'], chunksize=1000, metric="cosine", n_jobs=4)
+def get_closest_as_df(x, *args, **kwargs):
+    arr = get_sorted_distance_array(x, chunksize=1000, *args, **kwargs)
+    df_array = pd.DataFrame(arr)
+    df = pd.concat([x, dfa], axis=1)
+    cols_ = ['Text']
+    [cols_.append('Join_{}'.format(i+1)) for i in range(arr.shape[1])]
+    df.columns = cols_
 
+    for i in df.columns[1:]:
+        d = df.loc[df[i].astype(int), "Text"].reset_index(drop=True)
+        df['Text_{}'.format(i)] = d
 
-df2 = pd.concat([df, dfa], axis=1).iloc[:,2:]
-df2.columns = ["Text", "Join1","Join2","Join3"]
+    return df
 
-for i in ["Join1","Join2","Join3"]:
-    d = df2.loc[df2[i].astype(int), "Text"].reset_index(drop=True)
-    df2['Text_{}'.format(i)] = d
+cols = ['Text']
+cols.append(['Join_{}'.format(i) for i in range(20)])
+cols
+
+dfdf = get_closest_as_df(df['Text'], metric="cosine", n_jobs=2)
